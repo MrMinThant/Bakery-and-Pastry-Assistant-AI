@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bakery VLM Voice & Vision Assistant</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;max-width:480px;margin:24px auto;padding:15px;background:#faf7f2;color:#333}
+h1{text-align:center;color:#70452d;font-size:25px}
+.subtitle{text-align:center;color:#777;font-size:14px;margin-bottom:24px}
+.card{background:#fff;padding:18px;margin-bottom:17px;border-radius:12px;border:1px solid #e5ded5}
+label{display:block;font-weight:bold;margin-bottom:12px;color:#513c2e}
+input[type=file]{width:100%;padding:8px}
+#preview{display:none;width:100%;max-height:280px;object-fit:contain;margin-top:14px;border-radius:8px;background:#f5f1eb}
+button{width:100%;padding:14px;border:0;border-radius:8px;color:white;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}
+button:disabled{background:#aaa!important;cursor:not-allowed}
+#recordBtn{background:#e58a36}#recordBtn.recording{background:#c0392b}#submitBtn{background:#4caf50}
+#audioStatus{color:#666;font-size:14px;text-align:center}
+audio{width:100%;margin-top:12px}#resultCard{display:none}
+#result{white-space:pre-wrap;line-height:1.65;overflow-wrap:anywhere}
+.badge{display:inline-block;padding:6px 14px;border-radius:20px;color:#fff;font-weight:bold;font-size:14px;margin-bottom:12px}
+.badge.pass{background:#4caf50}.badge.action{background:#c0392b}
+.row{margin:8px 0;white-space:normal}.row b{color:#513c2e}
+.footer{text-align:center;color:#999;font-size:12px;margin-top:22px}
+</style>
+</head>
+<body>
+<h1>🥐 Bakery & Pastry AI Assistant</h1>
+<p class="subtitle">Identify bakery products and check their quality using a photo and your voice.</p>
+
+<section class="card">
+<label for="imageInput">1. Select or Take a Bakery Photo</label>
+<input type="file" id="imageInput" accept="image/*" capture="environment">
+<img id="preview" alt="Bakery product preview">
+</section>
+
+<section class="card">
+<label>2. Record Your Voice Question</label>
+<button id="recordBtn" type="button">🎤 Start Recording</button>
+<p id="audioStatus">No recording yet.</p>
+<audio id="audioPlayback" controls style="display:none"></audio>
+</section>
+
+<button id="submitBtn" type="button" disabled>Ask AI Assistant</button>
+
+<section class="card" id="resultCard">
+<h3>AI Analysis Result</h3>
+<div id="result" aria-live="polite"></div>
+</section>
+<p class="footer">Bakery VLM Voice & Vision Assistant</p>
+
+<script>
+let mediaRecorder=null,audioChunks=[],audioBlob=null,currentStream=null,previewUrl=null,playbackUrl=null;
+const imageInput=document.getElementById("imageInput");
+const preview=document.getElementById("preview");
+const recordBtn=document.getElementById("recordBtn");
+const audioStatus=document.getElementById("audioStatus");
+const audioPlayback=document.getElementById("audioPlayback");
+const submitBtn=document.getElementById("submitBtn");
+const resultCard=document.getElementById("resultCard");
+const resultDiv=document.getElementById("result");
+
+function esc(v){const d=document.createElement("div");d.textContent=(v===undefined||v===null)?"":String(v);return d.innerHTML;}
+function renderAnalysis(a){
+ const action=a.verdict==="ACTION_REQUIRED";
+ const defects=(a.visible_defects&&a.visible_defects.length)?a.visible_defects.map(esc).join(", "):"None visible";
+ resultDiv.style.whiteSpace="normal";
+ resultDiv.innerHTML=
+  '<span class="badge '+(action?"action":"pass")+'">'+(action?"\u26A0\uFE0F ACTION REQUIRED":"\u2705 PASS")+'</span>'+
+  '<div class="row"><b>Product:</b> '+esc(a.identified_product)+' ('+esc(a.category)+')</div>'+
+  '<div class="row"><b>Doneness:</b> '+esc(a.doneness)+'</div>'+
+  '<div class="row"><b>Defects:</b> '+defects+'</div>'+
+  '<div class="row"><b>Freshness:</b> '+esc(a.freshness_signs)+'</div>'+
+  '<div class="row"><b>Visual evidence:</b> '+esc(a.visual_evidence)+'</div>'+
+  '<div class="row"><b>Answer:</b> '+esc(a.answer_to_user)+'</div>'+
+  '<div class="row"><b>Recommendation:</b> '+esc(a.recommendation)+'</div>'+
+  '<div class="row"><b>Confidence:</b> '+esc(a.confidence)+'</div>';
+}
+
+function checkReady(){
+ submitBtn.disabled=!(imageInput.files.length>0 && audioBlob!==null &&
+   (!mediaRecorder || mediaRecorder.state==="inactive"));
+}
+
+imageInput.addEventListener("change",()=>{
+ const file=imageInput.files[0];
+ if(previewUrl) URL.revokeObjectURL(previewUrl);
+ if(file){previewUrl=URL.createObjectURL(file);preview.src=previewUrl;preview.style.display="block";}
+ else{preview.removeAttribute("src");preview.style.display="none";}
+ checkReady();
+});
+
+recordBtn.addEventListener("click",async()=>{
+ try{
+  if(mediaRecorder && mediaRecorder.state==="recording"){
+   recordBtn.disabled=true;mediaRecorder.stop();return;
+  }
+  if(!navigator.mediaDevices?.getUserMedia) throw new Error("Microphone access requires HTTPS. Open the Render HTTPS website.");
+  if(!window.MediaRecorder) throw new Error("This browser does not support audio recording.");
+  currentStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  let mimeType="";
+  for(const type of ["audio/webm;codecs=opus","audio/webm","audio/mp4"]){
+   if(MediaRecorder.isTypeSupported(type)){mimeType=type;break;}
+  }
+  mediaRecorder=mimeType?new MediaRecorder(currentStream,{mimeType}):new MediaRecorder(currentStream);
+  audioChunks=[];audioBlob=null;submitBtn.disabled=true;
+  mediaRecorder.ondataavailable=e=>{if(e.data?.size>0)audioChunks.push(e.data);};
+  mediaRecorder.onstop=()=>{
+   audioBlob=new Blob(audioChunks,{type:mediaRecorder.mimeType||"audio/webm"});
+   if(playbackUrl)URL.revokeObjectURL(playbackUrl);
+   playbackUrl=URL.createObjectURL(audioBlob);audioPlayback.src=playbackUrl;audioPlayback.style.display="block";
+   audioStatus.textContent="Voice recorded successfully!";
+   recordBtn.textContent="🎤 Record Again";recordBtn.classList.remove("recording");recordBtn.disabled=false;
+   if(currentStream){currentStream.getTracks().forEach(t=>t.stop());currentStream=null;}
+   checkReady();
+  };
+  mediaRecorder.onerror=()=>{audioStatus.textContent="Recording error. Please try again.";recordBtn.disabled=false;};
+  mediaRecorder.start();recordBtn.textContent="⏹ Stop Recording";recordBtn.classList.add("recording");
+  audioStatus.textContent="Recording... Speak your question now.";
+ }catch(error){
+  if(currentStream){currentStream.getTracks().forEach(t=>t.stop());currentStream=null;}
+  recordBtn.disabled=false;audioStatus.textContent="Microphone unavailable.";alert("Microphone error: "+error.message);
+ }
+});
+
+submitBtn.addEventListener("click",async()=>{
+ if(!imageInput.files.length||!audioBlob){alert("Please select a photo and record a voice question.");return;}
+ submitBtn.disabled=true;submitBtn.textContent="Analyzing...";
+ resultCard.style.display="block";resultDiv.style.whiteSpace="pre-wrap";resultDiv.textContent="Please wait. AI is analyzing your image and voice...";
+ const formData=new FormData();formData.append("image",imageInput.files[0]);
+ const ext=audioBlob.type.includes("mp4")?"mp4":"webm";
+ formData.append("audio",audioBlob,"question."+ext);
+ try{
+  const response=await fetch("/analyze",{method:"POST",body:formData});
+  const responseText=await response.text();let data;
+  try{data=JSON.parse(responseText);}
+  catch(parseError){throw new Error("The server returned an unexpected response (HTTP "+response.status+"). Check hosting logs.");}
+  if(!response.ok)throw new Error(data.error||("Analysis failed (HTTP "+response.status+")."));
+  if(data.analysis){renderAnalysis(data.analysis);}
+  else{resultDiv.textContent=data.answer||"No answer received.";}
+ }catch(error){resultDiv.textContent="Error: "+error.message;}
+ finally{submitBtn.textContent="Ask AI Assistant";checkReady();}
+});
+</script>
+</body>
+</html>
