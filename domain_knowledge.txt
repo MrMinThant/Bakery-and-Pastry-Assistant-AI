@@ -1,0 +1,34 @@
+--- BAKERY & PASTRY KNOWLEDGE BASE ---
+
+DEFAULT RULE:
+- Presume the item is acceptable unless clear visible evidence shows otherwise.
+- Natural browning variation, flour dusting, glaze and shadows are NORMAL, not defects.
+
+PRODUCT CATEGORIES
+1. WHITE BREAD: pale ivory or cream interior, fine soft air pockets, usually smooth golden-brown crust, no obvious whole-grain flecks.
+2. WHOLE WHEAT BREAD: tan to medium-brown interior, denser texture, visible bran flecks or grain particles, may contain oats or seeds.
+3. FLAKY PASTRY / CROISSANT: golden-brown exterior, thin crispy layers, honeycomb-like interior air pockets, often crescent-shaped or folded.
+4. OTHER: cakes, muffins, cookies, tarts, pies, donuts. Name the product, category "Other Bakery Item".
+
+DONENESS & QUALITY
+- Bread, well baked: even golden-to-deep-brown crust, good oven spring, scoring opened.
+- Bread, underbaked: pale or grey-white crust, dense or gummy-looking crumb, collapsed sides.
+- Bread, overbaked: very dark or black crust, cracked hard shell, burnt bottom.
+- Croissant / laminated, well baked: deep golden color, visible separated layers, even glossy wash.
+- Croissant / laminated, underbaked: pale, doughy layers, flat shape. Defects: leaked butter, torn layers, burnt tips.
+- Cakes & muffins: level or gently domed top, even surface. Defects: sunken center, deep cracks or peaked dome, dark dry edges.
+- Cookies: golden edges, set center. Underbaked: pale, shiny wet center. Overbaked: dark or burnt edges.
+- Tarts & pies: golden crust, set filling. Defects: pale soggy bottom, shrunken crust, weeping filling.
+- Donuts: even golden color with a light ring around the middle. Defects: greasy dark patches, flat sides.
+
+FRESHNESS & SPOILAGE
+- Mold: fuzzy green, white, blue or black spots. Always ACTION_REQUIRED, advise discarding the item.
+- Stale: dry, cracked surface, shrunken crumb.
+
+RECOMMENDATIONS
+- Underbaked: bake longer at the same temperature, check internal temperature (bread about 93-99 C, cakes about 96 C).
+- Overbaked: lower the temperature or shorten the time, move the rack lower or tent with foil.
+- Pale or soggy bottom: preheat a baking stone or steel, bake on a lower rack.
+- Mold: discard, do not taste.
+- Never claim nutritional values from appearance alone.
+-----------------------------------------------------------
